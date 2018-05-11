@@ -1,28 +1,26 @@
 import {
   IsNotEmpty,
   IsNumber,
-  Max,
+  Max, MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 class OrderDTO {
-  @IsNumber()
+  @MaxLength(15)
   @IsNotEmpty()
-  public id: number;
+  public id: string;
 
   @IsNumber()
+  @IsNotEmpty()
   @Min(0)
   @Max(500)
   public weight: number;
-
-  constructor(id: number, weight: number) {
-    this.id = id;
-    this.weight = weight;
-  }
 }
 
 export class CreateOrderDTO {
-  @ValidateNested({ each: true })
+  @ValidateNested()
+  @Type(() => OrderDTO)
   public packages: OrderDTO[];
 }

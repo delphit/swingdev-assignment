@@ -1,10 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  CreateDateColumn,
+} from 'typeorm';
 import { Package } from './package.entity';
 
 @Entity()
 export class Order {
   @PrimaryGeneratedColumn() public id: number;
-  @CreateDateColumn() public createdAt: Date;
+  @CreateDateColumn({ select: false }) public createdAt: Date;
   /**
    * Related packages
    */

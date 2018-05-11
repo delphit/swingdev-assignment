@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 
-@Catch(NotFoundException, BadRequestException, UnauthorizedException, ForbiddenException, Error)
+@Catch(NotFoundException, BadRequestException, UnauthorizedException, ForbiddenException)
 export class AnyExceptionFilter implements ExceptionFilter {
   /**
    * Catch passed exception

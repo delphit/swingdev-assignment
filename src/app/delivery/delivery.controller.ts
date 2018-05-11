@@ -10,11 +10,13 @@ export class DeliveryController {
   @Post('/create')
   public async createOrder(@Body() payload: CreateOrderDTO) {
     try {
-      const packages = await this.deliveryService.savePackages(payload.packages);
-      const trunks = await this.deliveryService.fillTrunks(packages);
-      return new APISuccess();
+      const order = await this.deliveryService.createOrder();
+      const packages = await this.deliveryService.savePackages(payload.packages, order);
+      const trucks = await this.deliveryService.fillTrucks(packages);
+      const price = trucks.reduce((prev, nextTruck) => prev + this.deliveryService.calculatePrice(nextTruck.load), 0).toFixed(2);
+      return new APISuccess({ price, trucks });
     } catch (err) {
-      return new APIError("Can't create new order");
+      return new APIError(err);
     }
   }
 }

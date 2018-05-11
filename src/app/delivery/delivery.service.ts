@@ -3,28 +3,45 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Package } from '../common/entity/package.entity';
 import { Truck } from '../common/entity/truck.entity';
+import { Order } from '../common/entity/order.entity';
 import { mergeByKeys } from '../common/utils';
+import { TRUNK_MAX_LOAD } from '../common/config';
 
 @Injectable()
 export class DeliveryService {
   constructor(
-    @InjectRepository(Package) private packageRepository: Repository<Package>,
+    @InjectRepository(Order) private orderRepository: Repository<Order>,
     @InjectRepository(Truck) private truckRepository: Repository<Truck>,
+    @InjectRepository(Package) private packageRepository: Repository<Package>,
   ) {}
+
+  /**
+   * Create new order
+   * @returns {Promise<never>}
+   */
+  public async createOrder() {
+    try {
+      const newOrder = new Order();
+      return await this.orderRepository.save(newOrder);
+    } catch (err) {
+      return Promise.reject("Can't save order");
+    }
+  }
 
   /**
    * Save packages into DB
    * @param packages
+   * @param order
    * @returns {Promise<any>}
    */
-  public async savePackages(packages) {
+  public async savePackages(packages, order) {
     try {
       return await Promise.all(
         packages.map(async data => {
           const { id, weight } = data;
-          const order = new Package();
-          mergeByKeys(order, { id, weight });
-          return await this.packageRepository.create(order);
+          const newPackage = new Package();
+          mergeByKeys(newPackage, { client: id, weight, order });
+          return await this.packageRepository.save(newPackage);
         }),
       );
     } catch (err) {
@@ -34,12 +51,23 @@ export class DeliveryService {
 
   /**
    * Create trunk
-   * @param packages
+   * @param payload
    * @returns {Promise<never>}
    */
-  public async createTrunk(packages) {
+  public async createTruck(payload) {
     try {
-      await this.truckRepository.save(packages);
+      const { load } = payload;
+      const newTruck = new Truck();
+      mergeByKeys(newTruck, { load });
+      const truck = await this.truckRepository.save(newTruck);
+      return {
+        truckID: truck.id,
+        load: truck.load.map(pack => ({
+          id: pack.id,
+          client: pack.client,
+          weight: pack.weight,
+        })),
+      };
     } catch (err) {
       return Promise.reject("Can't create trunk");
     }
@@ -50,21 +78,62 @@ export class DeliveryService {
    * @param packages
    * @returns {Promise<never>}
    */
-  public async fillTrunks(packages) {
+  public async fillTrucks(packages) {
     try {
+      const trucks = [];
+      const sortedPackages = this.sortPackages(packages);
+      sortedPackages.forEach(pack => {
+        const isAvailableTruck = this.isAvailableTruck(trucks, pack);
+        if (!pack.loaded && isAvailableTruck) {
+          isAvailableTruck.load.push(pack);
+        } else {
+          trucks.push({
+            load: [pack],
+          });
+        }
+      });
+      return await Promise.all(
+        trucks.map(async truck => {
+          return await this.createTruck(truck);
+        }),
+      );
     } catch (err) {
       return Promise.reject("Can't fill trunks");
     }
   }
+
   /**
-   * Calc packages price
+   * Find available truck
+   * @param trucks
+   * @param pack
+   * @returns {any}
+   */
+  private isAvailableTruck(trucks, pack) {
+    return trucks.find(truck => {
+      const totalWeight = truck.load.reduce(
+        (prev, next) => prev + next.weight,
+        0,
+      );
+      return totalWeight + pack.weight > TRUNK_MAX_LOAD ? false : true;
+    });
+  }
+
+  /**
+   * Sort packages by weight
    * @param packages
    * @returns {any}
    */
-  calculatePrice(packages) {
+  private sortPackages(packages) {
+    return packages.sort((prev, next) => prev.weight < next.weight);
+  }
+  /**
+   * Calc trucks price
+   * @param packages
+   * @returns {any}
+   */
+  public calculatePrice(packages) {
     return packages.reduce(
-      ({ weight }) => (weight > 400 ? 2 + 0.005 * weight : 0.01 * weight),
-      0,
+      (prevVal, nextLoad) => prevVal + (nextLoad.weight > 400 ? 2 + 0.005 * nextLoad.weight : 0.01 * nextLoad.weight), 0,
     );
   }
 }
