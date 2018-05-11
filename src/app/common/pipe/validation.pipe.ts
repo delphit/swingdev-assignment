@@ -1,4 +1,4 @@
-import { Injectable, ArgumentMetadata, HttpStatus, Pipe, PipeTransform } from '@nestjs/common';
+import { Injectable, ArgumentMetadata, HttpStatus, PipeTransform } from '@nestjs/common';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { plainToClass, classToPlain } from 'class-transformer';
 import { validate, ValidatorOptions } from 'class-validator';
@@ -16,7 +16,7 @@ export class ValidationPipe implements PipeTransform<any> {
   constructor(options?: ValidationPipeOptions) {
     options = options || {};
     const { transform, ...validatorOptions } = options;
-    this.isTransformEnabled = !!transform;
+    this.isTransformEnabled = Boolean(transform);
     this.validatorOptions = validatorOptions;
   }
   async transform(value, metadata: ArgumentMetadata) {
@@ -27,7 +27,6 @@ export class ValidationPipe implements PipeTransform<any> {
     const entity = plainToClass(metatype, value);
     const errors = await validate(entity, this.validatorOptions);
     if (errors.length > 0) {
-      console.log('errors', errors);
       throw new HttpValidationException(`Validation failed`, HttpStatus.BAD_REQUEST, errors);
     }
     return this.isTransformEnabled

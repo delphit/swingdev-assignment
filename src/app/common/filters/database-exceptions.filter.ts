@@ -1,5 +1,4 @@
 import { Catch, ExceptionFilter, HttpStatus, Logger } from '@nestjs/common';
-import { MongoError } from 'mongodb';
 
 interface DatabaseErrorMessage {
   message: string;
@@ -9,7 +8,6 @@ interface DatabaseErrorMessage {
 @Catch(Error)
 export class DatabaseExceptionFilter implements ExceptionFilter {
   private logger = new Logger(DatabaseExceptionFilter.name);
-  private readonly duplicateKey = 11000;
 
   public catch(exception, response) {
     this.logErrorMessage(exception);
@@ -17,10 +15,6 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       message: 'Unknow Exception',
       status: HttpStatus.INTERNAL_SERVER_ERROR,
     };
-
-    if (exception instanceof MongoError) {
-      errorMessage = this.mongodError(exception);
-    }
 
     if (exception.name === 'ValidationError') {
       errorMessage = this.formatMongooseError(exception);
@@ -39,21 +33,6 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       errorMessage.message = Object.keys(exception.errors)
         .map(key => exception.errors[key].message)
         .join(' ');
-    }
-
-    return errorMessage;
-  }
-
-  private mongodError(exception): DatabaseErrorMessage {
-    const errorMessage: DatabaseErrorMessage = {
-      message: 'Unknown Exception',
-      status: HttpStatus.INTERNAL_SERVER_ERROR,
-    };
-    switch (exception.code) {
-      case this.duplicateKey:
-        errorMessage.message = exception.message;
-        errorMessage.status = HttpStatus.CONFLICT;
-        break;
     }
 
     return errorMessage;
