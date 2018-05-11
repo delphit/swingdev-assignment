@@ -1,8 +1,3 @@
-# logistic
-
-## Description
-
-swingdev-logistic
 
 ## Installation
 
