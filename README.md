@@ -18,16 +18,6 @@ $ npm run start:dev
 npm run start:prod
 ```
 
-## Test
+[![asciicast](https://asciinema.org/a/dsTGdhFlupgboBAoJljwS734Z.png)](https://asciinema.org/a/dsTGdhFlupgboBAoJljwS734Z)
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
+![alt text](https://preview.ibb.co/hqSdyy/image.png)
