@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DeliveryModule } from './delivery/delivery.module';
-
 import { DB_CONFIG } from './common/config';
 
 @Module({

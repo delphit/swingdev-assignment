@@ -1,0 +1,1 @@
+export const TRUNK_MAX_LOAD = 1000;
